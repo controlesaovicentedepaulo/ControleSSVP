@@ -25,7 +25,7 @@ const Dashboard: React.FC<DashboardProps> = ({
 
   const activeFamiliesCount = data.families.filter(f => f.status === 'Ativo').length;
   const recentVisits = data.visits.length;
-  const deliveriesCount = data.deliveries.length;
+  const deliveriesCount = data.deliveries.filter(d => d.status === 'Entregue').length;
 
   // Lógica para contar famílias que buscaram cestas no mês atual
   const now = new Date();
@@ -33,7 +33,8 @@ const Dashboard: React.FC<DashboardProps> = ({
   
   const deliveriesThisMonth = data.deliveries.filter(d => 
     d.data.startsWith(currentMonthPrefix) && 
-    d.tipo.toLowerCase().includes('cesta')
+    d.tipo.toLowerCase().includes('cesta') &&
+    d.status === 'Entregue'
   );
   
   const uniqueFamiliesThisMonth = new Set(deliveriesThisMonth.map(d => d.familyId)).size;
@@ -103,10 +104,11 @@ const Dashboard: React.FC<DashboardProps> = ({
       const monthStr = String(month + 1).padStart(2, '0');
       const yearMonthPrefix = `${year}-${monthStr}`;
       
-      // Contar cestas entregues neste mês
+      // Contar cestas efetivamente entregues neste mês (excluir "Não Entregue")
       const cestasNoMes = data.deliveries.filter(d => 
         d.data.startsWith(yearMonthPrefix) && 
-        d.tipo.toLowerCase().includes('cesta')
+        d.tipo.toLowerCase().includes('cesta') &&
+        d.status === 'Entregue'
       ).length;
       
       // Contar famílias ativas cadastradas até este mês (crescimento acumulado)
