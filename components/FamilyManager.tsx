@@ -46,8 +46,8 @@ const FamilyManager: React.FC<FamilyManagerProps> = ({
   const [temComorbidadeAssistido, setTemComorbidadeAssistido] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [sortColumn, setSortColumn] = useState<'ficha' | 'nome' | 'bairro' | 'membros' | 'status'>('ficha');
-  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('desc');
+  const [sortColumn, setSortColumn] = useState<'ficha' | 'nome' | 'bairro' | 'membros' | 'status'>('nome');
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   
   // Estados para o Modal de Adicionar Membro Avulso
   const [newMemberRendaVisible, setNewMemberRendaVisible] = useState(false);
@@ -313,10 +313,12 @@ const FamilyManager: React.FC<FamilyManagerProps> = ({
     }
   }, [families, isAdding]);
 
-  const filteredFamilies = families.filter(f => 
-    f.nomeAssistido.toLowerCase().includes(search.toLowerCase()) || 
-    f.bairro.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredFamilies = families.filter(f => {
+    const searchLower = search.toLowerCase();
+    return f.nomeAssistido.toLowerCase().includes(searchLower) || 
+      f.bairro.toLowerCase().includes(searchLower) ||
+      f.endereco.toLowerCase().includes(searchLower);
+  });
 
   // Função para alternar a ordenação ao clicar no cabeçalho
   const handleSort = (column: 'ficha' | 'nome' | 'bairro' | 'membros' | 'status') => {
@@ -1827,7 +1829,7 @@ const FamilyManager: React.FC<FamilyManagerProps> = ({
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" 
-            placeholder="Buscar por nome ou bairro..."
+            placeholder="Buscar por nome, bairro ou rua..."
           />
         </div>
         <div className="flex gap-2">
