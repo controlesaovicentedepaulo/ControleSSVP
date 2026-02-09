@@ -37,7 +37,7 @@ const Dashboard: React.FC<DashboardProps> = ({
     d.status === 'Entregue'
   );
   
-  const uniqueFamiliesThisMonth = new Set(deliveriesThisMonth.map(d => d.familyId)).size;
+  const cestasEntreguesMes = deliveriesThisMonth.length;
 
   const stats = [
     { 
@@ -48,11 +48,11 @@ const Dashboard: React.FC<DashboardProps> = ({
       trend: 'No cadastro' 
     },
     { 
-      label: 'Atendidas (Mês)', 
-      value: uniqueFamiliesThisMonth, 
+      label: 'Entregas (Mês)', 
+      value: cestasEntreguesMes, 
       icon: HeartHandshake, 
       color: 'bg-rose-500', 
-      trend: 'Cestas básicas' 
+      trend: 'Cestas entregues' 
     },
     { 
       label: 'Visitas (Total)', 
