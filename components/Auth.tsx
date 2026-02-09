@@ -77,41 +77,7 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
         </div>
 
         <div className="p-6">
-          <div className="grid grid-cols-2 gap-2 bg-slate-50 p-1 rounded-2xl border border-slate-100">
-            <button
-              type="button"
-              onClick={() => setMode('login')}
-              className={`py-2 rounded-xl text-sm font-bold transition-colors ${
-                mode === 'login' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              Entrar
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('signup')}
-              className={`py-2 rounded-xl text-sm font-bold transition-colors ${
-                mode === 'signup' ? 'bg-white shadow-sm text-slate-800' : 'text-slate-500 hover:text-slate-700'
-              }`}
-            >
-              Criar conta
-            </button>
-          </div>
-
-          <form onSubmit={handleSubmit} className="mt-6 space-y-4">
-            {mode === 'signup' && (
-              <>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Nome</label>
-                  <input value={fullName} onChange={(e) => setFullName(e.target.value)} className="ssvp-input" placeholder="Ex: João da Silva" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">Conferência</label>
-                  <input value={conference} onChange={(e) => setConference(e.target.value)} className="ssvp-input" placeholder="Ex: Conferência São Vicente" />
-                </div>
-              </>
-            )}
-
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <label className="text-xs font-bold text-slate-500 uppercase tracking-widest">E-mail</label>
               <div className="relative">
@@ -150,11 +116,9 @@ const Auth: React.FC<AuthProps> = ({ onSuccess }) => {
               type="submit"
               className="w-full py-3 rounded-xl bg-blue-600 text-white font-bold shadow-lg shadow-blue-100 hover:bg-blue-700 disabled:opacity-60 flex items-center justify-center gap-2"
             >
-              {mode === 'login' ? <LogIn size={18} /> : <UserPlus size={18} />}
-              {loading ? 'Aguarde...' : mode === 'login' ? 'Entrar' : 'Criar conta'}
+              <LogIn size={18} />
+              {loading ? 'Aguarde...' : 'Entrar'}
             </button>
-
-            <p className="text-[11px] text-slate-400 text-center">Configuração: veja `SUPABASE_SETUP.md`.</p>
           </form>
         </div>
       </div>

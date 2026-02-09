@@ -144,8 +144,12 @@ function getStatusColor(status: string): { r: number; g: number; b: number } {
   }
 }
 
-// Gerar PDF da lista de famílias
-export function generateFamiliesPDF(families: Family[], members: Member[]): void {
+// Gerar PDF da lista de famílias com ordenação selecionável
+export function generateFamiliesPDF(
+  families: Family[], 
+  members: Member[], 
+  sortOrder: 'alfabetica' | 'endereco' | 'ficha' = 'alfabetica'
+): void {
   try {
     const doc = new jsPDF();
   let yPos = 20;
@@ -153,11 +157,79 @@ export function generateFamiliesPDF(families: Family[], members: Member[]): void
   const margin = 20;
   const maxWidth = 170;
 
+  // Ordenar famílias conforme a opção escolhida
+  const sortedFamilies = [...families].sort((a, b) => {
+    switch (sortOrder) {
+      case 'alfabetica':
+        return (a.nomeAssistido || '').localeCompare(b.nomeAssistido || '', 'pt-BR');
+      case 'endereco': {
+        const endA = `${a.endereco || ''} ${a.bairro || ''}`.trim().toLowerCase();
+        const endB = `${b.endereco || ''} ${b.bairro || ''}`.trim().toLowerCase();
+        const cmp = endA.localeCompare(endB, 'pt-BR');
+        if (cmp !== 0) return cmp;
+        return (a.nomeAssistido || '').localeCompare(b.nomeAssistido || '', 'pt-BR');
+      }
+      case 'ficha': {
+        const fichaA = parseInt(a.ficha) || 0;
+        const fichaB = parseInt(b.ficha) || 0;
+        return fichaA - fichaB;
+      }
+      default:
+        return 0;
+    }
+  });
+
+  const sortLabels: Record<string, string> = {
+    'alfabetica': 'Ordem Alfabética',
+    'endereco': 'Agrupado por Endereço',
+    'ficha': 'Número da Ficha'
+  };
+
+  // Função para desenhar cabeçalho da tabela
+  const drawTableHeader = () => {
+    doc.setFontSize(9);
+    doc.setFont('helvetica', 'bold');
+    doc.setFillColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
+    doc.rect(margin, yPos - 6, maxWidth, 10, 'F');
+    doc.setDrawColor(150, 150, 150);
+    doc.setLineWidth(0.5);
+    doc.rect(margin, yPos - 6, maxWidth, 10);
+    
+    let xPos = margin + 4;
+    doc.setTextColor(255, 255, 255);
+    doc.text('FICHA', xPos, yPos);
+    xPos += 20;
+    doc.text('NOME', xPos, yPos);
+    xPos += 68;
+    doc.text('ENDEREÇO', xPos, yPos);
+    xPos += 48;
+    doc.text('STATUS', xPos, yPos);
+    yPos += 12;
+  };
+
+  // Função para desenhar separador de grupo (para ordenação por endereço)
+  const drawGroupSeparator = (label: string) => {
+    if (yPos > pageHeight - 55) {
+      doc.addPage();
+      yPos = 20;
+    }
+    doc.setFillColor(230, 240, 255);
+    doc.rect(margin, yPos - 5, maxWidth, 9, 'F');
+    doc.setDrawColor(COLORS.primary.r, COLORS.primary.g, COLORS.primary.b);
+    doc.setLineWidth(0.3);
+    doc.rect(margin, yPos - 5, maxWidth, 9);
+    doc.setFontSize(8);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(COLORS.primary.r, COLORS.primary.g, COLORS.primary.b);
+    doc.text(`> ${label}`, margin + 4, yPos);
+    yPos += 10;
+  };
+
   // Cabeçalho principal colorido
   yPos = addColoredHeader(doc, 'LISTA DE FAMÍLIAS', COLORS.primary, yPos, margin, maxWidth);
   yPos += 8;
 
-  // Data de geração em box destacado
+  // Data de geração e ordenação em box destacado
   doc.setFontSize(8);
   doc.setFont('helvetica', 'normal');
   doc.setFillColor(240, 240, 240);
@@ -165,7 +237,7 @@ export function generateFamiliesPDF(families: Family[], members: Member[]): void
   doc.setDrawColor(200, 200, 200);
   doc.rect(margin, yPos - 4, maxWidth, 6);
   doc.setTextColor(80, 80, 80);
-  doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}`, margin + 3, yPos);
+  doc.text(`Gerado em: ${new Date().toLocaleDateString('pt-BR')} às ${new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}  |  ${sortLabels[sortOrder]}`, margin + 3, yPos);
   yPos += 10;
 
   if (families.length === 0) {
@@ -178,7 +250,6 @@ export function generateFamiliesPDF(families: Family[], members: Member[]): void
   }
 
   // Estatísticas em box destacado
-  // Contar apenas membros que têm familyId válido
   const totalMembers = members.filter(m => {
     const familyId = m.familyId || (m as any)["familyId"];
     return familyId && String(familyId).trim() !== '';
@@ -201,56 +272,32 @@ export function generateFamiliesPDF(families: Family[], members: Member[]): void
   doc.text(`Total: ${families.length} família${families.length !== 1 ? 's' : ''}  |  ${totalMembers} membro${totalMembers !== 1 ? 's' : ''}  |  ${activeFamilies} ativa${activeFamilies !== 1 ? 's' : ''}`, margin + 3, yPos);
   yPos += 12;
 
-  // Cabeçalho da tabela melhorado
-  doc.setFontSize(9);
-  doc.setFont('helvetica', 'bold');
-  doc.setFillColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
-  doc.rect(margin, yPos - 6, maxWidth, 10, 'F');
-  doc.setDrawColor(150, 150, 150);
-  doc.setLineWidth(0.5);
-  doc.rect(margin, yPos - 6, maxWidth, 10);
-  
-  let xPos = margin + 4;
-  doc.setTextColor(255, 255, 255);
-  doc.text('FICHA', xPos, yPos);
-  xPos += 20;
-  doc.text('NOME', xPos, yPos);
-  xPos += 68;
-  doc.text('ENDEREÇO', xPos, yPos);
-  xPos += 48;
-  doc.text('STATUS', xPos, yPos);
-  yPos += 12;
+  // Cabeçalho da tabela
+  drawTableHeader();
 
   // Dados com melhor formatação
+  let lastGroup = '';
   doc.setFont('helvetica', 'normal');
   doc.setTextColor(0, 0, 0);
-  families.forEach((family, index) => {
+  sortedFamilies.forEach((family, index) => {
+    // Para ordenação por endereço, mostrar separadores de grupo
+    if (sortOrder === 'endereco') {
+      const currentGroup = `${family.endereco || 'Sem endereço'}${family.bairro ? ` - ${family.bairro}` : ''}`.trim();
+      if (currentGroup !== lastGroup) {
+        lastGroup = currentGroup;
+        drawGroupSeparator(currentGroup);
+      }
+    }
+
     // Verificar se precisa de nova página
     if (yPos > pageHeight - 45) {
       doc.addPage();
       yPos = 20;
-      // Recriar cabeçalho da tabela na nova página
-      doc.setFontSize(9);
-      doc.setFont('helvetica', 'bold');
-      doc.setFillColor(COLORS.darkGray.r, COLORS.darkGray.g, COLORS.darkGray.b);
-      doc.rect(margin, yPos - 6, maxWidth, 10, 'F');
-      doc.setDrawColor(150, 150, 150);
-      doc.rect(margin, yPos - 6, maxWidth, 10);
-      let headerX = margin + 4;
-      doc.setTextColor(255, 255, 255);
-      doc.text('FICHA', headerX, yPos);
-      headerX += 20;
-      doc.text('NOME', headerX, yPos);
-      headerX += 68;
-      doc.text('ENDEREÇO', headerX, yPos);
-      headerX += 48;
-      doc.text('STATUS', headerX, yPos);
-      yPos += 12;
+      drawTableHeader();
     }
 
-    // Filtrar membros - o campo pode vir como "familyId" do banco
+    // Filtrar membros
     const familyMembers = members.filter(m => {
-      // Tentar todos os formatos possíveis do campo
       const memberFamilyId = m.familyId || (m as any)["familyId"] || (m as any)["FamilyId"] || (m as any).FamilyId;
       const familyIdStr = String(memberFamilyId || '').trim();
       const familyIdToMatch = String(family.id || '').trim();
@@ -318,7 +365,7 @@ export function generateFamiliesPDF(families: Family[], members: Member[]): void
     yPos += maxHeight;
     
     // Linha separadora mais sutil
-    if (index < families.length - 1) {
+    if (index < sortedFamilies.length - 1) {
       doc.setDrawColor(230, 230, 230);
       doc.setLineWidth(0.2);
       doc.line(margin, yPos - 1, margin + maxWidth, yPos - 1);

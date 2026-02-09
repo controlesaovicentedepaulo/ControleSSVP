@@ -39,6 +39,8 @@ const FamilyManager: React.FC<FamilyManagerProps> = ({
   const [showDeleteFamilyModal, setShowDeleteFamilyModal] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importProgress, setImportProgress] = useState<{ total: number; processed: number; success: number; errors: number } | null>(null);
+  const [isPdfModalOpen, setIsPdfModalOpen] = useState(false);
+  const [pdfSortOrder, setPdfSortOrder] = useState<'alfabetica' | 'endereco' | 'ficha'>('alfabetica');
   const [search, setSearch] = useState('');
   const [nextFicha, setNextFicha] = useState('1');
   const [totalMoradores, setTotalMoradores] = useState(1);
@@ -1834,18 +1836,7 @@ const FamilyManager: React.FC<FamilyManagerProps> = ({
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => {
-              try {
-                if (families && members) {
-                  generateFamiliesPDF(families, members);
-                } else {
-                  alert('Dados não disponíveis para gerar PDF');
-                }
-              } catch (error) {
-                console.error('Erro ao gerar PDF:', error);
-                alert('Erro ao gerar PDF. Verifique o console para mais detalhes.');
-              }
-            }}
+            onClick={() => setIsPdfModalOpen(true)}
             className="flex items-center justify-center w-10 h-10 bg-purple-600 text-white rounded-xl font-semibold hover:bg-purple-700 transition-all shadow-md shadow-purple-100"
             title="Download PDF - Lista de Famílias"
           >
@@ -1876,6 +1867,88 @@ const FamilyManager: React.FC<FamilyManagerProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Modal de Ordenação para PDF */}
+      {isPdfModalOpen && createPortal(
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-300">
+          <div className="bg-white w-full max-w-sm rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300">
+            <div className="p-6 bg-purple-600 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-white/20 rounded-xl">
+                  <FileDown size={22} />
+                </div>
+                <div>
+                  <h4 className="font-bold text-lg">Gerar PDF</h4>
+                  <p className="text-white/80 text-xs font-medium">Escolha a ordem da listagem</p>
+                </div>
+              </div>
+              <button onClick={() => setIsPdfModalOpen(false)} className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                <X size={22} />
+              </button>
+            </div>
+            <div className="p-6 space-y-4">
+              <p className="text-sm text-slate-500 font-medium">Como deseja ordenar as famílias no PDF?</p>
+              <div className="space-y-3">
+                {[
+                  { key: 'alfabetica' as const, label: 'Ordem Alfabética', description: 'A-Z pelo nome do assistido', icon: '🔤' },
+                  { key: 'endereco' as const, label: 'Agrupar por Endereço', description: 'Ruas iguais ficam juntas', icon: '🏠' },
+                  { key: 'ficha' as const, label: 'Número da Ficha', description: 'Ordenar pelo N° de cadastro', icon: '#️⃣' },
+                ].map(({ key, label, description, icon }) => (
+                  <button
+                    key={key}
+                    onClick={() => setPdfSortOrder(key)}
+                    className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 text-left transition-all ${
+                      pdfSortOrder === key ? 'border-purple-500 bg-purple-50' : 'border-slate-200 hover:border-slate-300'
+                    }`}
+                  >
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-lg ${
+                      pdfSortOrder === key ? 'bg-purple-100' : 'bg-slate-100'
+                    }`}>
+                      {icon}
+                    </div>
+                    <div className="flex-1">
+                      <p className={`text-sm font-bold ${pdfSortOrder === key ? 'text-purple-700' : 'text-slate-700'}`}>{label}</p>
+                      <p className="text-[10px] text-slate-400">{description}</p>
+                    </div>
+                    <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${
+                      pdfSortOrder === key ? 'border-purple-600 bg-purple-600' : 'border-slate-300'
+                    }`}>
+                      {pdfSortOrder === key && <div className="w-2 h-2 rounded-full bg-white" />}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setIsPdfModalOpen(false)}
+                  className="flex-1 px-4 py-3 bg-white border border-slate-200 text-slate-600 rounded-xl text-sm font-bold hover:bg-slate-50 transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  onClick={() => {
+                    try {
+                      if (families && members) {
+                        generateFamiliesPDF(families, members, pdfSortOrder);
+                        setIsPdfModalOpen(false);
+                      } else {
+                        alert('Dados não disponíveis para gerar PDF');
+                      }
+                    } catch (error) {
+                      console.error('Erro ao gerar PDF:', error);
+                      alert('Erro ao gerar PDF. Verifique o console para mais detalhes.');
+                    }
+                  }}
+                  className="flex-1 px-4 py-3 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-100 flex items-center justify-center gap-2"
+                >
+                  <FileDown size={16} /> Gerar PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>,
+        document.body
+      )}
 
       <div className="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
